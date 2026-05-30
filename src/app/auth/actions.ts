@@ -18,14 +18,17 @@ export async function login(formData: FormData) {
   // Clear stale session
   await supabase.auth.signOut()
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   })
 
   if (error) {
+    console.error('Login error for', email, ':', error)
     return { error: error.message }
   }
+  
+  console.log('Login successful for user:', data.user?.id)
 
   revalidatePath('/', 'layout')
   redirect('/dashboard')
@@ -45,7 +48,7 @@ export async function signup(formData: FormData) {
   // Clear stale session
   await supabase.auth.signOut()
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -56,8 +59,11 @@ export async function signup(formData: FormData) {
   })
 
   if (error) {
+    console.error('Signup error for', email, ':', error)
     return { error: error.message }
   }
+
+  console.log('Signup successful for user:', data.user?.id)
 
   // After signup, we log them in and redirect
   revalidatePath('/', 'layout')
@@ -66,7 +72,12 @@ export async function signup(formData: FormData) {
 
 export async function logout() {
   const supabase = await createClient()
-  await supabase.auth.signOut()
+  const { error } = await supabase.auth.signOut()
+  if (error) {
+    console.error('Logout error:', error)
+  } else {
+    console.log('Logout successful')
+  }
   
   revalidatePath('/', 'layout')
   redirect('/')

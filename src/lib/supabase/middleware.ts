@@ -29,7 +29,12 @@ export async function updateSession(request: NextRequest) {
 
   const {
     data: { user },
+    error: getUserError
   } = await supabase.auth.getUser()
+
+  if (getUserError) {
+    console.error('Middleware getUser error:', getUserError.message)
+  }
 
   // Protected routes logic
   const isAuthRoute = request.nextUrl.pathname.startsWith('/auth')
@@ -37,16 +42,32 @@ export async function updateSession(request: NextRequest) {
   const isProtectedRoute = !isPublicRoute
 
   if (!user && isProtectedRoute) {
+    console.log(`Middleware: Unauthorized access to ${request.nextUrl.pathname}. Redirecting to /auth/login`)
     const url = request.nextUrl.clone()
     url.pathname = '/auth/login'
-    return NextResponse.redirect(url)
+    const redirectResponse = NextResponse.redirect(url)
+    
+    // Crucial: copy cookies from supabaseResponse to redirectResponse
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie.name, cookie.value)
+    })
+    
+    return redirectResponse
   }
 
   // If user is logged in, restrict access to auth pages
   if (user && isAuthRoute) {
+    console.log(`Middleware: Authenticated user ${user.id} tried to access auth route ${request.nextUrl.pathname}. Redirecting to /dashboard`)
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
-    return NextResponse.redirect(url)
+    const redirectResponse = NextResponse.redirect(url)
+    
+    // Crucial: copy cookies from supabaseResponse to redirectResponse
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie.name, cookie.value)
+    })
+    
+    return redirectResponse
   }
 
   return supabaseResponse
