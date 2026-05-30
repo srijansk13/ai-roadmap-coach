@@ -97,7 +97,11 @@ export async function POST(req: Request) {
     5: 'React Basics (components, props, state, hooks: useState, useEffect)',
     6: 'Backend with Node.js + Express (REST APIs, middleware, routing, JSON responses)',
     7: 'Database + Auth (Supabase/PostgreSQL, SQL basics, authentication, JWT)',
-    8: 'Full-Stack Project + Career Prep (deploy full-stack app, resume, GitHub, LinkedIn, interview prep)',
+    8: 'Full-Stack Project Part 1 (Backend architecture, database schema, API design)',
+    9: 'Full-Stack Project Part 2 (Frontend integration, state management, UI polish)',
+    10: 'Cloud Deployment & DevOps (Docker basics, CI/CD, AWS/Vercel advanced hosting)',
+    11: 'Performance & Testing (Jest/Cypress testing, Web Vitals, caching strategies)',
+    12: 'Career Prep & Open Source (Resume, LinkedIn, interview prep, open-source PRs)',
   }
 
   const weekGuides = Array.from({ length: numWeeksThisChunk }, (_, i) => {

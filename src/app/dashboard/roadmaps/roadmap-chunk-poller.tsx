@@ -114,10 +114,13 @@ export default function RoadmapChunkPoller({ roadmap }: { roadmap: any }) {
       }
 
       // All weeks done
+      const durationLabel = totalWeeks % 4 === 0
+        ? `${totalWeeks / 4}-Month`
+        : `${totalWeeks}-Week`
       setState(prev => ({
         ...prev,
         phase: 'complete',
-        message: 'All worlds generated! Your full 60-day journey is ready.'
+        message: `All worlds generated! Your full ${durationLabel} journey is ready.`
       }))
       router.refresh()
       isRunning.current = false

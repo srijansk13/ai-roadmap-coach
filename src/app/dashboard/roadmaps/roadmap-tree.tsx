@@ -20,7 +20,11 @@ const getWorldTheme = (num: number) => {
     { title: "Backend City", intro: "The sprawling urban center of servers and APIs.", bg: "from-slate-800/40 to-orange-950/40", border: "border-orange-500/30", text: "text-orange-400", glow: "shadow-[0_0_60px_rgba(249,115,22,0.2)]", particles: "bg-orange-400" },
     { title: "Database Vault", intro: "Deep underground, where data is securely guarded.", bg: "from-yellow-900/40 to-amber-950/40", border: "border-amber-500/30", text: "text-amber-400", glow: "shadow-[0_0_60px_rgba(245,158,11,0.2)]", particles: "bg-amber-400" },
     { title: "Portfolio Arena", intro: "Showcase your skills and build your legend.", bg: "from-fuchsia-900/40 to-pink-950/40", border: "border-pink-500/30", text: "text-pink-400", glow: "shadow-[0_0_60px_rgba(236,72,153,0.2)]", particles: "bg-pink-400" },
-    { title: "Interview Castle", intro: "The final gauntlet before you claim your career.", bg: "from-yellow-700/40 to-amber-900/40", border: "border-yellow-500/40", text: "text-yellow-400", glow: "shadow-[0_0_80px_rgba(234,179,8,0.25)]", particles: "bg-yellow-400" }
+    { title: "Interview Castle", intro: "The final gauntlet before you claim your career.", bg: "from-yellow-700/40 to-amber-900/40", border: "border-yellow-500/40", text: "text-yellow-400", glow: "shadow-[0_0_80px_rgba(234,179,8,0.25)]", particles: "bg-yellow-400" },
+    { title: "Cloud Fortress", intro: "Scale your work to the entire planet.", bg: "from-sky-900/40 to-indigo-950/40", border: "border-sky-500/30", text: "text-sky-400", glow: "shadow-[0_0_60px_rgba(14,165,233,0.2)]", particles: "bg-sky-400" },
+    { title: "DevOps Stronghold", intro: "Automate everything and ship with confidence.", bg: "from-violet-900/40 to-purple-950/40", border: "border-violet-500/30", text: "text-violet-400", glow: "shadow-[0_0_60px_rgba(139,92,246,0.2)]", particles: "bg-violet-400" },
+    { title: "Performance Lab", intro: "Push speed and quality to their absolute limits.", bg: "from-rose-900/40 to-red-950/40", border: "border-rose-500/30", text: "text-rose-400", glow: "shadow-[0_0_60px_rgba(244,63,94,0.2)]", particles: "bg-rose-400" },
+    { title: "Career Summit", intro: "Stand at the top. The world is watching.", bg: "from-emerald-700/40 to-teal-900/40", border: "border-emerald-400/40", text: "text-emerald-300", glow: "shadow-[0_0_80px_rgba(52,211,153,0.3)]", particles: "bg-emerald-300" },
   ];
   return themes[(num - 1) % themes.length];
 }
@@ -129,8 +133,9 @@ export default function RoadmapTree({ sections, roadmap, playerStats }: { sectio
   const generatedWeeksCount = roadmap?.generated_weeks_count ?? sections.length
   const totalWeeks = roadmap?.total_weeks ?? 8
   const pendingWeeks = Math.max(0, totalWeeks - generatedWeeksCount)
-  // Wider path offsets for snaking horizontally to use more width
-  const desktopOffsets = [0, 80, 160, 80, 0, -80, -160, -80]
+  // Wider path offsets for snaking horizontally - dynamically generated for any roadmap length
+  const baseOffsets = [0, 80, 160, 80, 0, -80, -160, -80]
+  const desktopOffsets = Array.from({ length: Math.max(totalWeeks, sections.length) + 4 }, (_, i) => baseOffsets[i % baseOffsets.length])
 
   // Flatten levels to find active and next missions
   const allLevels = sections.flatMap(s => s.roadmap_levels.map((l: any) => ({ ...l, section_number: s.section_number })))
