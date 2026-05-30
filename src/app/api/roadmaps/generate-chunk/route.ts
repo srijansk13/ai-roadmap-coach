@@ -188,7 +188,7 @@ FORMATTING RULES (follow these exactly):
           difficulty: level.difficulty,
           xp_reward: xpReward,
           is_boss_level: level.is_boss_level,
-          status: 'locked',
+          status: globalLevelIndex === 1 ? 'unlocked' : 'locked',
           motivational_message: level.motivational_message,
           practice_challenge: level.practice_challenge,
           resources: level.resources.map(r => {
@@ -238,6 +238,6 @@ FORMATTING RULES (follow these exactly):
       status: 'failed',
       last_generation_error: error.message || 'Unknown error occurred during generation'
     }).eq('id', roadmapId)
-    return NextResponse.json({ error: 'Failed to generate next chunk' }, { status: 500 })
+    return NextResponse.json({ error: error.message || 'Failed to generate next chunk' }, { status: 200 })
   }
 }
