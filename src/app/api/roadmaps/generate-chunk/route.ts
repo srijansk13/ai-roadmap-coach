@@ -3,7 +3,6 @@ import { generateObject } from 'ai'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 import { NextResponse } from 'next/server'
-import { GEMINI_MODEL } from '@/lib/ai-config'
 import { resolveSingleResource } from '@/lib/resource-resolver'
 
 export const maxDuration = 45;
@@ -13,21 +12,21 @@ const sectionSchema = z.object({
   description: z.string(),
   levels: z.array(z.object({
     title: z.string(),
-    objective: z.string().describe("Story-style description. MUST END with 'Why this matters: [Reason]'"),
+    objective: z.string().describe("1-2 short sentences. MUST END with 'Why this matters: [Reason]'"),
     motivational_message: z.string(),
     practice_challenge: z.string(),
     is_boss_level: z.boolean(),
     difficulty: z.enum(['beginner', 'intermediate', 'advanced', 'boss']),
     resources: z.array(z.object({
       title: z.string(),
-      topic_intent: z.string().describe('The primary topic or skill to learn, e.g., "React Hooks", "CSS Flexbox"'),
+      topic_intent: z.string().describe('Short primary topic intent'),
       type: z.enum(['docs', 'video', 'practice'])
     })).length(3),
     tasks: z.array(z.object({
       title: z.string(),
       type: z.enum(['learn', 'practice', 'build', 'apply', 'review', 'challenge', 'portfolio', 'interview'])
-    })).min(3).max(8)
-  })).min(5).max(7)
+    })).min(3).max(4)
+  })).min(3).max(5)
 })
 
 export async function POST(req: Request) {
@@ -41,7 +40,6 @@ export async function POST(req: Request) {
   const { data: roadmap } = await supabase.from('roadmaps').select('*').eq('id', roadmapId).single()
   if (!roadmap) return NextResponse.json({ error: 'Roadmap not found' }, { status: 404 })
 
-  // Guard: only generate if there are remaining weeks
   const currentGenerated: number = roadmap.generated_weeks_count ?? 0
   const totalWeeks: number = roadmap.total_weeks ?? 8
 
@@ -49,7 +47,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, weeksGenerated: currentGenerated, alreadyDone: true })
   }
   
-  // If roadmap previously failed, reset it so we can retry
   if (roadmap.status === 'failed') {
     await supabase.from('roadmaps').update({
       status: 'partially_ready',
@@ -57,7 +54,6 @@ export async function POST(req: Request) {
     }).eq('id', roadmapId)
   }
 
-  // Prevent duplicate concurrent generation, but allow retry if stuck for > 2 minutes
   if (roadmap.status === 'generating') {
     if (roadmap.generation_started_at) {
       const startedAt = new Date(roadmap.generation_started_at).getTime()
@@ -65,7 +61,6 @@ export async function POST(req: Request) {
       if (now - startedAt < 2 * 60 * 1000) {
         return NextResponse.json({ error: 'Generation already in progress', isGenerating: true }, { status: 409 })
       }
-      // If it's been more than 2 minutes, we assume it's stuck and proceed
     } else {
       return NextResponse.json({ error: 'Generation already in progress', isGenerating: true }, { status: 409 })
     }
@@ -76,7 +71,6 @@ export async function POST(req: Request) {
   const numWeeksThisChunk = endWeek - startWeek + 1
   const isFinalChunk = endWeek >= totalWeeks
 
-  // Mark status as generating
   await supabase.from('roadmaps').update({ 
     status: 'generating',
     current_generating_chunk: startWeek,
@@ -88,21 +82,20 @@ export async function POST(req: Request) {
     supabase.from('skills').select('*').eq('user_id', user.id)
   ])
 
-  // Full-stack week curriculum guide for AI
   const weekCurriculum: Record<number, string> = {
-    1: 'Dev Environment Setup + HTML Fundamentals (VS Code, Node, Git, semantic HTML, basic CSS)',
-    2: 'CSS Mastery (Flexbox, Grid, animations, responsive design, building real UI sections)',
-    3: 'JavaScript Fundamentals (variables, functions, DOM manipulation, events)',
-    4: 'Async JS + APIs (Promises, async/await, fetch, mini projects with real APIs)',
-    5: 'React Basics (components, props, state, hooks: useState, useEffect)',
-    6: 'Backend with Node.js + Express (REST APIs, middleware, routing, JSON responses)',
-    7: 'Database + Auth (Supabase/PostgreSQL, SQL basics, authentication, JWT)',
-    8: 'Full-Stack Project + Career Prep (deploy full-stack app, resume, GitHub, LinkedIn, interview prep)',
+    1: 'Dev Environment Setup + HTML Fundamentals',
+    2: 'CSS Mastery',
+    3: 'JavaScript Fundamentals',
+    4: 'Async JS + APIs',
+    5: 'React Basics',
+    6: 'Backend with Node.js + Express',
+    7: 'Database + Auth',
+    8: 'Full-Stack Project + Career Prep',
   }
 
   const weekGuides = Array.from({ length: numWeeksThisChunk }, (_, i) => {
     const weekNum = startWeek + i
-    return `Week ${weekNum}: ${weekCurriculum[weekNum] || 'Advanced topics for ' + profile?.target_role}`
+    return `Week ${weekNum}: ${weekCurriculum[weekNum] || 'Advanced topics'}`
   }).join('\n')
 
   const systemPrompt = `
@@ -111,40 +104,31 @@ You are the Roadmap Generator Engine for SkillQuest AI. Generate EXACTLY ${numWe
 CURRICULUM FOR THESE WEEKS:
 ${weekGuides}
 
-FORMATTING RULES (follow these exactly):
-- Each week must have 5-7 daily levels. The LAST level of each week is a BOSS level (recap + massive mini-project).
-- Mix up the day types (Setup Day, Exploration Day, Mini-Project Day, Challenge Day, Review Day, Portfolio Day, Interview Prep Day).
-- level title: A SHORT, exciting mission name (e.g. "Construct Your Developer Basecamp"). Action verb first.
-- objective: A story-style description of what the developer will accomplish. **MUST** end with exactly "Why this matters: [Reason]".
-- tasks: 3-8 project-driven quests that feel like Duolingo missions or real-world tickets. No theory lessons.
-  BAD: "Learn Flexbox", "Practice CSS Selectors", "Learn HTML Structure"
-  GOOD: "Build a Netflix-style navigation bar", "Build a Battle-Ready Landing Page", "Clone a LinkedIn profile header"
-- task type: Choose accurately from ['learn', 'practice', 'build', 'apply', 'review', 'challenge', 'portfolio', 'interview'].
-- practice_challenge: One concrete hands-on mini-project the user builds after finishing tasks.
-- motivational_message: A punchy completion message. E.g. "You just built software that people can actually use. You are officially a developer."
-- resources: EXACTLY 3 resources for each level:
-  1) A 'docs' type resource (provide topic_intent, e.g. "React Hooks")
-  2) A 'video' type resource (provide topic_intent)
-  3) A 'practice' type resource (provide topic_intent)
-  Do NOT provide raw URLs. Only provide title, topic_intent, and type.
+FORMATTING RULES (COMPACT JSON ONLY):
+- 3 to 5 levels max per week. LAST level is boss level.
+- Short mission titles (e.g. "Dev Basecamp").
+- objective: 1-2 short sentences. No essays. MUST end with "Why this matters: [Reason]".
+- tasks: 3-4 tasks max per level. Keep titles short.
+- practice_challenge: 1 sentence description.
+- motivational_message: 1 short punchy sentence.
+- resources: EXACTLY 3 resources. Provide title, topic_intent, type.
 - Difficulty: ${profile?.current_level}. Target: ${profile?.target_role}.
-- NEVER generate GitHub proof requirements for beginner levels (Weeks 1-4). Text or URL proof is sufficient.
 `
 
   try {
     const { object } = await generateObject({
-      model: google(GEMINI_MODEL),
+      model: google('gemini-2.5-flash'),
       system: systemPrompt,
-      prompt: `Generate Week ${startWeek} to Week ${endWeek} missions for: Goal=${profile?.primary_goal}, Role=${profile?.target_role}, Level=${profile?.current_level}, Existing Skills=${skills?.map(s => s.skill_name).join(',') || 'None'}. Make tasks feel like quests, not syllabus items.`,
+      prompt: `Generate compact Week ${startWeek} missions for: Goal=${profile?.primary_goal}, Role=${profile?.target_role}, Level=${profile?.current_level}. NO markdown, NO huge explanations.`,
       schema: z.object({
         sections: z.array(sectionSchema).length(numWeeksThisChunk)
       }),
-      abortSignal: AbortSignal.timeout(20000)
+      temperature: 0.5,
+      abortSignal: AbortSignal.timeout(25000)
     })
 
     let sectionIndex = startWeek;
 
-    // Fetch highest existing level_number so we continue numbering correctly
     const { data: existingSections } = await supabase
       .from('roadmap_sections')
       .select('id')
@@ -162,6 +146,11 @@ FORMATTING RULES (follow these exactly):
       if (existingLevels && existingLevels.length > 0) {
         globalLevelIndex = existingLevels[0].level_number + 1
       }
+    }
+
+    // Clean up any potentially duplicated section due to a mid-flight failure on retry
+    if (existingSections) {
+      await supabase.from('roadmap_sections').delete().eq('roadmap_id', roadmapId).eq('section_number', startWeek)
     }
 
     for (const section of object.sections) {
