@@ -25,6 +25,14 @@ export default function RoadmapChunkPoller({ roadmap }: { roadmap: any }) {
   })
 
   const [retryKey, setRetryKey] = useState(0)
+  const [loadingTextIndex, setLoadingTextIndex] = useState(0)
+
+  const loadingTexts = [
+    'Forging your first two worlds...',
+    'Designing missions...',
+    'Attaching verified resources...',
+    'Preparing boss battles...'
+  ]
 
   const totalWeeks: number = roadmap.total_weeks ?? 8
   const initialGenerated: number = roadmap.generated_weeks_count ?? 0
@@ -118,6 +126,15 @@ export default function RoadmapChunkPoller({ roadmap }: { roadmap: any }) {
     generateAllRemainingChunks()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [retryKey])
+
+  useEffect(() => {
+    if (state.phase === 'generating') {
+      const interval = setInterval(() => {
+        setLoadingTextIndex(i => (i + 1) % loadingTexts.length)
+      }, 3000)
+      return () => clearInterval(interval)
+    }
+  }, [state.phase])
 
   const handleRetry = () => {
     isRunning.current = false
@@ -226,7 +243,7 @@ export default function RoadmapChunkPoller({ roadmap }: { roadmap: any }) {
           <div className="px-4 pb-3">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Loader2 className="w-3 h-3 animate-spin text-indigo-400" />
-              <span>AI is crafting your personalized missions...</span>
+              <span>{loadingTexts[loadingTextIndex]}</span>
             </div>
           </div>
         )}

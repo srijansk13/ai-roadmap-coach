@@ -15,6 +15,9 @@ export async function login(formData: FormData) {
     return { error: 'Email and password are required' }
   }
 
+  // Clear stale session
+  await supabase.auth.signOut()
+
   const { error } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -38,6 +41,9 @@ export async function signup(formData: FormData) {
   if (!email || !password) {
     return { error: 'Email and password are required' }
   }
+
+  // Clear stale session
+  await supabase.auth.signOut()
 
   const { error } = await supabase.auth.signUp({
     email,

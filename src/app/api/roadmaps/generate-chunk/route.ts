@@ -6,7 +6,7 @@ import { NextResponse } from 'next/server'
 import { GEMINI_MODEL } from '@/lib/ai-config'
 import { resolveSingleResource } from '@/lib/resource-resolver'
 
-export const maxDuration = 45;
+export const maxDuration = 60;
 
 const sectionSchema = z.object({
   title: z.string(),
@@ -133,7 +133,7 @@ FORMATTING RULES (follow these exactly):
 
   try {
     const abortController = new AbortController();
-    const timeoutId = setTimeout(() => abortController.abort(), 25000);
+    const timeoutId = setTimeout(() => abortController.abort(), 50000);
 
     const { object } = await generateObject({
       model: google(GEMINI_MODEL),
@@ -242,7 +242,7 @@ FORMATTING RULES (follow these exactly):
     return NextResponse.json({ success: true, weeksGenerated: endWeek, isFinalChunk })
   } catch (error: any) {
     if (error.name === 'AbortError') {
-      console.error('AI generation timed out (25s limit).');
+      console.error('AI generation timed out (50s limit).');
       await supabase.from('roadmaps').update({ 
         status: 'failed',
         last_generation_error: 'AI generation timed out. Please retry.'

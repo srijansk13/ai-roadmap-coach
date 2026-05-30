@@ -370,9 +370,18 @@ export default function RoadmapTree({ sections, roadmap, playerStats }: { sectio
                       {idx < 2 && (
                         <div className="absolute top-[60px] left-1/2 w-1 h-[8rem] -ml-[2px] -z-10 bg-white/10 rounded-full" />
                       )}
-                      <div className="w-[64px] h-[64px] rounded-full bg-[#1a1b26] border-[4px] border-white/5 flex items-center justify-center">
-                        <Lock className="w-5 h-5 text-white/20" />
+                      <div className="w-[64px] h-[64px] rounded-full bg-[#1a1b26] border-[4px] border-white/5 flex items-center justify-center relative">
+                        {worldNum === 1 && idx === 0 ? (
+                          <Lock className="w-5 h-5 text-indigo-400/50" />
+                        ) : (
+                          <Lock className="w-5 h-5 text-white/20" />
+                        )}
                       </div>
+                      {worldNum === 1 && idx === 0 && (
+                        <div className="mt-3 text-[10px] font-black text-indigo-400 tracking-[2px] uppercase animate-pulse">
+                          Preparing Day 1...
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
