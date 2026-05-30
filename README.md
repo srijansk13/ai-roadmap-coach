@@ -29,8 +29,22 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+## Deployment Preparation
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+This application relies on Supabase for the database and authentication, and the Gemini API for AI roadmap generation. To deploy to production, follow these steps:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. **Create a Supabase Project**:
+   - Go to [Supabase](https://supabase.com/) and create a new project.
+   - Wait for the database to provision.
+
+2. **Run Migrations**:
+   - In your Supabase SQL Editor, run all the required database migrations (tables for `profiles`, `roadmaps`, `roadmap_sections`, `roadmap_levels`, `roadmap_tasks`, and `achievements`).
+
+3. **Configure Environment Variables**:
+   - In your Vercel project settings, add the following Environment Variables exactly as they appear in `.env.example`:
+     - `NEXT_PUBLIC_SUPABASE_URL` (From Supabase Project Settings -> API)
+     - `NEXT_PUBLIC_SUPABASE_ANON_KEY` (From Supabase Project Settings -> API)
+     - `GEMINI_API_KEY` (From Google AI Studio)
+
+4. **Deploy to Vercel**:
+   - Connect your GitHub repository to Vercel and trigger a deployment. The app uses Next.js and will automatically build using `npm run build`.
