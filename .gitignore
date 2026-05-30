@@ -39,3 +39,25 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# AI agent files
+agents.md
+AGENTS.md
+claude.md
+CLAUDE.md
+
+# Cursor / AI workspace files
+.cursor/
+.cursor-cache/
+
+# Local environment
+.env
+.env.local
+.env.production
+.env.development
+
+# Logs
+*.log
+
+# OS files
+Thumbs.db
