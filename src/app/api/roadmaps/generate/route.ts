@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
+export const maxDuration = 30;
+
 export async function POST(req: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -9,26 +11,24 @@ export async function POST(req: Request) {
   // Fetch context
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
 
-  const defaultTitle = profile?.primary_goal 
-    ? `${profile.primary_goal} Quest` 
-    : 'Your Developer Quest'
-
   // Archive old roadmaps
   await supabase.from('roadmaps').update({ status: 'archived' }).eq('user_id', user.id)
 
   const { count } = await supabase.from('roadmaps').select('*', { count: 'exact', head: true }).eq('user_id', user.id)
   const newVersion = `V${(count || 0) + 1}`
 
-  // Insert Roadmap
+  const title = profile?.primary_goal ? `${profile.primary_goal} Quest: ${profile.target_timeline || 60}-Day Sprint` : 'Developer Quest: 60-Day Sprint'
+
+  // Insert Roadmap shell
   const { data: roadmap, error: rError } = await supabase.from('roadmaps').insert({
     user_id: user.id,
     version: newVersion,
-    title: defaultTitle,
+    title,
     career_goal: profile?.primary_goal || 'Unknown',
     duration_days: parseInt(profile?.target_timeline || '60') || 60,
     generated_weeks_count: 0,
     total_weeks: 8,
-    status: 'partially_ready' // Allows the chunk poller to pick it up immediately
+    status: 'partially_ready'
   }).select().single()
 
   if (rError || !roadmap) return NextResponse.json({ error: 'Roadmap creation failed' }, { status: 500 })

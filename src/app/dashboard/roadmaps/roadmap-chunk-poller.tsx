@@ -19,7 +19,7 @@ export default function RoadmapChunkPoller({ roadmap }: { roadmap: any }) {
   const [state, setState] = useState<PollerState>({
     phase: 'idle',
     currentWeekStart: (roadmap.generated_weeks_count ?? 0) + 1,
-    currentWeekEnd: Math.min((roadmap.generated_weeks_count ?? 0) + 1, roadmap.total_weeks ?? 8),
+    currentWeekEnd: Math.min((roadmap.generated_weeks_count ?? 0) + 2, roadmap.total_weeks ?? 8),
     message: '',
     error: null
   })
@@ -41,7 +41,7 @@ export default function RoadmapChunkPoller({ roadmap }: { roadmap: any }) {
 
       while (currentGenerated < totalWeeks) {
         const weekStart = currentGenerated + 1
-        const weekEnd = Math.min(currentGenerated + 1, totalWeeks)
+        const weekEnd = Math.min(currentGenerated + 2, totalWeeks)
 
         setState(prev => ({
           ...prev,
@@ -126,7 +126,7 @@ export default function RoadmapChunkPoller({ roadmap }: { roadmap: any }) {
       phase: 'idle',
       error: null,
       currentWeekStart: initialGenerated + 1,
-      currentWeekEnd: Math.min(initialGenerated + 1, totalWeeks),
+      currentWeekEnd: Math.min(initialGenerated + 2, totalWeeks),
     }))
     setRetryKey(k => k + 1) // increments retryKey → triggers useEffect again
   }
