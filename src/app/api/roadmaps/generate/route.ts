@@ -40,11 +40,10 @@ export async function POST(req: Request) {
   ])
 
   const systemPrompt = `
-You are the Roadmap Generator Engine for SkillQuest AI. Generate EXACTLY 2 weekly sections: Week 1 and Week 2.
+You are the Roadmap Generator Engine for SkillQuest AI. Generate EXACTLY 1 weekly section: Week 1.
 
-CURRICULUM FOR WEEK 1 AND WEEK 2:
+CURRICULUM FOR WEEK 1:
 Week 1: Dev Environment Setup + HTML Fundamentals (VS Code setup, Node.js, Git basics, terminal, semantic HTML, creating real pages)
-Week 2: CSS Mastery (selectors, box model, Flexbox, Grid, responsive design, building real styled UI sections)
 
 FORMATTING RULES (follow these exactly):
 - Each week must have 5-7 daily levels. The LAST level of each week is a BOSS level (full project/recap).
@@ -62,17 +61,18 @@ FORMATTING RULES (follow these exactly):
   2) Free YouTube/video tutorial link (e.g. Traversy Media, freeCodeCamp, Kevin Powell, Web Dev Simplified)
   3) Practical free exercise or project reference link
 - Difficulty: ${profile?.current_level ?? 'beginner'}. Target: ${profile?.target_role ?? 'Full Stack Developer'}.
-- Week 1-2 levels are beginner — DO NOT require GitHub proof. Use text confirmation as proof.
+- Week 1 levels are beginner — DO NOT require GitHub proof. Use text confirmation as proof.
 `
 
   const { object } = await generateObject({
     model: google(GEMINI_MODEL),
     system: systemPrompt,
-    prompt: `Generate Week 1 and Week 2 missions for: Goal=${profile?.primary_goal}, Role=${profile?.target_role}, Level=${profile?.current_level}, Existing Skills=${skills?.map(s => s.skill_name).join(',') || 'None'}. Make this feel like starting an epic developer adventure, not reading a textbook.`,
+    prompt: `Generate Week 1 missions for: Goal=${profile?.primary_goal}, Role=${profile?.target_role}, Level=${profile?.current_level}, Existing Skills=${skills?.map(s => s.skill_name).join(',') || 'None'}. Make this feel like starting an epic developer adventure, not reading a textbook.`,
     schema: z.object({
       title: z.string().describe('The overall title of the 60-day roadmap — exciting, mission-style (e.g. "Full-Stack Internship Quest: 60-Day Sprint")'),
-      sections: z.array(sectionSchema).length(2)
-    })
+      sections: z.array(sectionSchema).length(1)
+    }),
+    abortSignal: AbortSignal.timeout(20000)
   })
 
 
@@ -89,7 +89,7 @@ FORMATTING RULES (follow these exactly):
     title: object.title,
     career_goal: profile?.primary_goal || 'Unknown',
     duration_days: parseInt(profile?.target_timeline || '60') || 60,
-    generated_weeks_count: 2,
+    generated_weeks_count: 1,
     total_weeks: 8,
     status: 'partially_ready'
   }).select().single()

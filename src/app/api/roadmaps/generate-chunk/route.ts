@@ -72,7 +72,7 @@ export async function POST(req: Request) {
   }
 
   const startWeek = currentGenerated + 1
-  const endWeek = Math.min(startWeek + 1, totalWeeks)
+  const endWeek = Math.min(startWeek, totalWeeks)
   const numWeeksThisChunk = endWeek - startWeek + 1
   const isFinalChunk = endWeek >= totalWeeks
 
@@ -138,7 +138,8 @@ FORMATTING RULES (follow these exactly):
       prompt: `Generate Week ${startWeek} to Week ${endWeek} missions for: Goal=${profile?.primary_goal}, Role=${profile?.target_role}, Level=${profile?.current_level}, Existing Skills=${skills?.map(s => s.skill_name).join(',') || 'None'}. Make tasks feel like quests, not syllabus items.`,
       schema: z.object({
         sections: z.array(sectionSchema).length(numWeeksThisChunk)
-      })
+      }),
+      abortSignal: AbortSignal.timeout(20000)
     })
 
     let sectionIndex = startWeek;
